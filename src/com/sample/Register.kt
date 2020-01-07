@@ -11,36 +11,19 @@ import io.ktor.sessions.*
 import com.sample.dao.*
 import com.sample.model.*
 
-/**
- * Register routes for user registration in the [Register] route (/register)
- */
 fun Route.register(dao: DAOFacade, hashFunction: (String) -> String) {
-    /**
-     * A POST request to the [Register] route, will try to create a new user.
-     *
-     * - If the user is already logged, it redirects to the [UserPage] page.
-     * - If not specified the userId, password, displayName or email, it will redirect to the [Register] form page.
-     * - Then it will validate the specified parameters, redirecting displaying an error to the [Register] page.
-     * - On success, it generates a new [User]. But instead of storing the password plain text,
-     *   it stores a hash of the password.
-     */
+
     post<Register> {
-        // get current from session data if any
         val user = call.sessions.get<Session>()?.let { dao.user(it.userId) }
-        // user already logged in? redirect to user page.
         if (user != null) return@post call.redirect(UserPage(user.userId))
 
-        // receive post data
-        // TODO: use conneg when it's ready and `call.receive<Register>()`
         val registration = call.receive<Parameters>()
         val userId = registration["userId"] ?: return@post call.redirect(it)
         val password = registration["password"] ?: return@post call.redirect(it)
         val displayName = registration["displayName"] ?: return@post call.redirect(it)
         val email = registration["email"] ?: return@post call.redirect(it)
 
-        // prepare location class for error if any
         val error = Register(userId, displayName, email)
-
         when {
             password.length < 6 -> call.redirect(error.copy(error = "Password should be at least 6 characters long"))
             userId.length < 4 -> call.redirect(error.copy(error = "Login should be at least 4 characters long"))
@@ -70,10 +53,6 @@ fun Route.register(dao: DAOFacade, hashFunction: (String) -> String) {
         }
     }
 
-    /**
-     * A GET request would show the registration form (with an error if specified by the URL in the case there was an error in the form processing)
-     * If the user is already logged, it redirects the client to the [UserPage] instead.
-     */
     get<Register> {
         val user = call.sessions.get<Session>()?.let { dao.user(it.userId) }
         if (user != null) {

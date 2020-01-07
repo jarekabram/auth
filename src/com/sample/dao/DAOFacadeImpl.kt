@@ -1,23 +1,17 @@
 package com.sample.dao
 
-import com.sample.model.*
-import org.ehcache.*
-import org.ehcache.config.*
-import org.ehcache.config.persistence.*
-import org.ehcache.config.units.*
-import org.joda.time.*
-import java.io.*
+import com.sample.model.User
+import org.ehcache.CacheManagerBuilder
+import org.ehcache.config.CacheConfigurationBuilder
+import org.ehcache.config.ResourcePoolsBuilder
+import org.ehcache.config.persistence.CacheManagerPersistenceConfiguration
+import org.ehcache.config.units.EntryUnit
+import org.ehcache.config.units.MemoryUnit
+import java.io.File
 
-/**
- * An Ehcache based implementation for the [DAOFacade] that uses a [delegate] facade and a [storagePath]
- * and perform several caching strategies for each domain operation.
- */
+
 class DAOFacadeCache(val delegate: DAOFacade, val storagePath: File) : DAOFacade {
-    /**
-     * Build a cache manager with a cache for users.
-     * It uses the specified [storagePath] for persistence.
-     * Limits the cache to 1000 entries, 10MB in memory, and 100MB in disk per both caches.
-     */
+
     val cacheManager = CacheManagerBuilder.newCacheManagerBuilder()
             .with(CacheManagerPersistenceConfiguration(storagePath))
             .withCache("usersCache",
@@ -30,10 +24,6 @@ class DAOFacadeCache(val delegate: DAOFacade, val storagePath: File) : DAOFacade
                             .buildConfig(String::class.java, User::class.java))
             .build(true)
 
-
-    /**
-     * Gets the cache for users represented by a [String] key and a [User] value.
-     */
     val usersCache = cacheManager.getCache("usersCache", String::class.java, User::class.java)
 
     override fun init() {

@@ -17,6 +17,20 @@
         <div class="header">
             <div class="brand-title">Auth</div>
             <nav class="nav">
+                <table class="nav-list">
+                    <tr>
+                        <th class="nav-item"><a class="pure-button" href="/">homepage</a></th>
+                        <#if user??>
+                            <th class="nav-item"><a class="pure-button" href="/user/${user.userId}">my timeline</a></th>
+                            <th class="nav-item"><a class="pure-button" href="/logout">sign out
+                                [${user.displayName?has_content?then(user.displayName, user.userId)}]</a></th>
+                        <#else>
+                            <th class="nav-item"><a class="pure-button" href="/register">sign up</a></th>
+                            <th class="nav-item"><a class="pure-button" href="/login">sign in</a></th>
+                        </#if>
+                    </tr>
+                </table>
+                <!--
                 <ul class="nav-list">
                     <li class="nav-item"><a class="pure-button" href="/">homepage</a></li>
                     <#if user??>
@@ -28,6 +42,7 @@
                         <li class="nav-item"><a class="pure-button" href="/login">sign in</a></li>
                     </#if>
                 </ul>
+                -->
             </nav>
         </div>
     </div>

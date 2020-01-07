@@ -10,14 +10,8 @@ import io.ktor.routing.*
 import io.ktor.sessions.*
 import com.sample.dao.*
 
-/**
- * Registers the [Login] and [Logout] routes '/login' and '/logout'.
- */
 fun Route.login(dao: DAOFacade, hash: (String) -> String) {
-    /**
-     * A GET request to the [Login], would respond with the login page
-     * (unless the user is already logged in, in which case it would redirect to the user's page)
-     */
+
     get<Login> {
         val user = call.sessions.get<Session>()?.let { dao.user(it.userId) }
 
@@ -28,11 +22,6 @@ fun Route.login(dao: DAOFacade, hash: (String) -> String) {
         }
     }
 
-    /**
-     * A POST request to the [Login] actually processes the [Parameters] to validate them, if valid it sets the session.
-     * It will redirect either to the [Login] page with an error in the case of error,
-     * or to the [UserPage] if the login was successful.
-     */
     post<Login> {
         val post = call.receive<Parameters>()
         val userId = post["userId"] ?: return@post call.redirect(it)
@@ -55,9 +44,6 @@ fun Route.login(dao: DAOFacade, hash: (String) -> String) {
         }
     }
 
-    /**
-     * A GET request to the [Logout] page, removes the session and redirects to the [Index] page.
-     */
     get<Logout> {
         call.sessions.clear<Session>()
         call.redirect(Index())
