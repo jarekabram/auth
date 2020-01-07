@@ -16,21 +16,13 @@ import org.h2.*
 import org.jetbrains.exposed.sql.*
 import java.io.*
 import java.net.*
-import java.util.concurrent.*
 import javax.crypto.*
 import javax.crypto.spec.*
 import com.sample.dao.*
 import com.sample.model.*
 
-/*
- * Classes used for the locations feature to build urls and register routes.
- */
-
 @Location("/")
 class Index()
-
-@Location("/post-new")
-class PostNew()
 
 @Location("/user/{user}")
 data class UserPage(val user: String)
@@ -46,24 +38,24 @@ class Logout()
 
 data class Session(val userId: String)
 
-val hashKey = hex("6819b57a326945c1968f45236589")
+val hexValue = hex("6819b57a326945c1968f45236589")
 
 val dir = File("build/db")
-val pool = ComboPooledDataSource().apply {
+val databaseSettings = ComboPooledDataSource().apply {
     driverClass = Driver::class.java.name
     jdbcUrl = "jdbc:h2:file:${dir.canonicalFile.absolutePath}"
     user = ""
     password = ""
 }
 
-val hmacKey = SecretKeySpec(hashKey, "HmacSHA1")
+val hashedKey = SecretKeySpec(hexValue, "HmacSHA1")
 
-val dao: DAOFacade = DAOFacadeCache(DAOFacadeDatabase(Database.connect(pool)), File(dir.parentFile, "ehcache"))
+val dao: DAOFacade = DAOFacadeCache(DAOFacadeDatabase(Database.connect(databaseSettings)), File(dir.parentFile, "ehcache"))
 
 
 fun Application.main() {
     dao.init()
-    environment.monitor.subscribe(ApplicationStopped) { pool.close() }
+    environment.monitor.subscribe(ApplicationStopped) { databaseSettings.close() }
     mainWithDependencies(dao)
 }
 
@@ -78,25 +70,25 @@ fun Application.mainWithDependencies(dao: DAOFacade) {
     }
     install(Sessions) {
         cookie<Session>("SESSION") {
-            transform(SessionTransportTransformerMessageAuthentication(hashKey))
+            transform(SessionTransportTransformerMessageAuthentication(hexValue))
         }
     }
 
-    val hashFunction = { s: String -> hash(s) }
+    val hash = { s: String -> hashString(s) }
 
     routing {
         styles()
         index(dao)
         userPage(dao)
-        login(dao, hashFunction)
-        register(dao, hashFunction)
+        login(dao, hash)
+        register(dao, hash)
     }
 }
 
-fun hash(password: String): String {
-    val hmac = Mac.getInstance("HmacSHA1")
-    hmac.init(hmacKey)
-    return hex(hmac.doFinal(password.toByteArray(Charsets.UTF_8)))
+fun hashString(password: String): String {
+    val algorithm = Mac.getInstance("HmacSHA1")
+    algorithm.init(hashedKey)
+    return hex(algorithm.doFinal(password.toByteArray(Charsets.UTF_8)))
 }
 
 suspend fun ApplicationCall.redirect(location: Any) {
@@ -107,15 +99,12 @@ suspend fun ApplicationCall.redirect(location: Any) {
     respondRedirect("http://$address${application.locations.href(location)}")
 }
 
-fun ApplicationCall.securityCode(date: Long, user: User, hashFunction: (String) -> String) =
-        hashFunction("$date:${user.userId}:${request.host()}:${refererHost()}")
+fun ApplicationCall.securityCode(date: Long, user: User, hash: (String) -> String) =
+        hash("$date:${user.userId}:${request.host()}:${refererHost()}")
 
-fun ApplicationCall.verifyCode(date: Long, user: User, code: String, hashFunction: (String) -> String) =
-        securityCode(date, user, hashFunction) == code
-                && (System.currentTimeMillis() - date).let { it > 0 && it < TimeUnit.MILLISECONDS.convert(2, TimeUnit.HOURS) }
 
 fun ApplicationCall.refererHost() = request.header(HttpHeaders.Referrer)?.let { URI.create(it).host }
 
-private val userIdPattern = "[a-zA-Z0-9_\\.]+".toRegex()
+private val userIdRegexPattern = "[a-zA-Z0-9_\\.]+".toRegex()
 
-internal fun userNameValid(userId: String) = userId.matches(userIdPattern)
+internal fun validateUserName(userId: String) = userId.matches(userIdRegexPattern)

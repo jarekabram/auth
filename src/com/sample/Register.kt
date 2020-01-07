@@ -27,7 +27,7 @@ fun Route.register(dao: DAOFacade, hashFunction: (String) -> String) {
         when {
             password.length < 6 -> call.redirect(error.copy(error = "Password should be at least 6 characters long"))
             userId.length < 4 -> call.redirect(error.copy(error = "Login should be at least 4 characters long"))
-            !userNameValid(userId) -> call.redirect(error.copy(error = "Login should be consists of digits, letters, dots or underscores"))
+            !validateUserName(userId) -> call.redirect(error.copy(error = "Login should be consists of digits, letters, dots or underscores"))
             dao.user(userId) != null -> call.redirect(error.copy(error = "User with the following login is already registered"))
             else -> {
                 val hash = hashFunction(password)
