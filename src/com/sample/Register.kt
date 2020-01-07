@@ -26,7 +26,7 @@ fun Route.register(dao: DAOFacade, hashFunction: (String) -> String) {
      */
     post<Register> {
         // get current from session data if any
-        val user = call.sessions.get<KweetSession>()?.let { dao.user(it.userId) }
+        val user = call.sessions.get<Session>()?.let { dao.user(it.userId) }
         // user already logged in? redirect to user page.
         if (user != null) return@post call.redirect(UserPage(user.userId))
 
@@ -64,7 +64,7 @@ fun Route.register(dao: DAOFacade, hashFunction: (String) -> String) {
                     }
                 }
 
-                call.sessions.set(KweetSession(newUser.userId))
+                call.sessions.set(Session(newUser.userId))
                 call.redirect(UserPage(newUser.userId))
             }
         }
@@ -75,7 +75,7 @@ fun Route.register(dao: DAOFacade, hashFunction: (String) -> String) {
      * If the user is already logged, it redirects the client to the [UserPage] instead.
      */
     get<Register> {
-        val user = call.sessions.get<KweetSession>()?.let { dao.user(it.userId) }
+        val user = call.sessions.get<Session>()?.let { dao.user(it.userId) }
         if (user != null) {
             call.redirect(UserPage(user.userId))
         } else {

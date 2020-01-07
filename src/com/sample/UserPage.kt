@@ -19,16 +19,14 @@ fun Route.userPage(dao: DAOFacade) {
      * If the user doesn't exists, it will return a 404 page instead.
      */
     get<UserPage> {
-        val user = call.sessions.get<KweetSession>()?.let { dao.user(it.userId) }
+        val user = call.sessions.get<Session>()?.let { dao.user(it.userId) }
         val pageUser = dao.user(it.user)
 
         if (pageUser == null) {
             call.respond(HttpStatusCode.NotFound.description("User ${it.user} doesn't exist"))
         } else {
-            val kweets = dao.userKweets(it.user).map { dao.getKweet(it) }
-            val etag = (user?.userId ?: "") + "_" + kweets.map { it.text.hashCode() }.hashCode().toString()
-
-            call.respond(FreeMarkerContent("user.ftl", mapOf("user" to user, "pageUser" to pageUser, "kweets" to kweets), etag))
+            val etag = (user?.userId)
+            call.respond(FreeMarkerContent("user.ftl", mapOf("user" to user, "pageUser" to pageUser), etag))
         }
     }
 }

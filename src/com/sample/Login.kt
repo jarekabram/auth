@@ -19,7 +19,7 @@ fun Route.login(dao: DAOFacade, hash: (String) -> String) {
      * (unless the user is already logged in, in which case it would redirect to the user's page)
      */
     get<Login> {
-        val user = call.sessions.get<KweetSession>()?.let { dao.user(it.userId) }
+        val user = call.sessions.get<Session>()?.let { dao.user(it.userId) }
 
         if (user != null) {
             call.redirect(UserPage(user.userId))
@@ -50,7 +50,7 @@ fun Route.login(dao: DAOFacade, hash: (String) -> String) {
         if (login == null) {
             call.redirect(error.copy(error = "Invalid username or password"))
         } else {
-            call.sessions.set(KweetSession(login.userId))
+            call.sessions.set(Session(login.userId))
             call.redirect(UserPage(login.userId))
         }
     }
@@ -59,7 +59,7 @@ fun Route.login(dao: DAOFacade, hash: (String) -> String) {
      * A GET request to the [Logout] page, removes the session and redirects to the [Index] page.
      */
     get<Logout> {
-        call.sessions.clear<KweetSession>()
+        call.sessions.clear<Session>()
         call.redirect(Index())
     }
 }
